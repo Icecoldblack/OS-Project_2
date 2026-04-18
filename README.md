@@ -34,7 +34,7 @@ OS_Project_2/
 
 ### From Eclipse
 1. Open `src/main.java`
-2. Click the **Run** button (▶)
+2. Click the **Run** button 
 3. View output in the Console panel
 
 ### From the Terminal
