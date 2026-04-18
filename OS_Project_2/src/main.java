@@ -132,7 +132,83 @@ class Consumer extends Thread {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// main — entry point for BOTH parts
+// PART 3 — Philosopher (Dining Philosophers Problem)
+//
+// 5 philosophers sit at a round table with 5 forks between them.
+// Each fork is a ReentrantLock shared by the two adjacent philosophers.
+//
+// DEADLOCK AVOIDANCE: always pick up the LOWER-numbered fork first.
+// This breaks the circular-wait condition — the classic cause of
+// deadlock in the naive version of this problem.
+//
+// Thread activity is printed at every step so you can see exactly
+// when a thread waits, acquires a lock, and releases it.
+// ─────────────────────────────────────────────────────────────────
+class Philosopher extends Thread {
+    private final int id;
+    private final ReentrantLock[] forks;   // shared array of all 5 forks
+    private final int leftForkId;
+    private final int rightForkId;
+    private static final int ROUNDS = 3;   // each philosopher eats 3 times
+
+    public Philosopher(int id, ReentrantLock[] forks) {
+        this.id          = id;
+        this.forks       = forks;
+        this.leftForkId  = id;               // fork to the left of philosopher i
+        this.rightForkId = (id + 1) % 5;     // fork to the right (wraps around)
+    }
+
+    @Override
+    public void run() {
+        System.out.println("[Philosopher " + id + "] Started.");
+        try {
+            for (int round = 1; round <= ROUNDS; round++) {
+                think();
+                pickUpForks();
+                eat();
+                putDownForks();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        System.out.println("[Philosopher " + id + "] Finished dining.");
+    }
+
+    // ── Think phase ───────────────────────────────────────────────
+    private void think() throws InterruptedException {
+        System.out.println("[Philosopher " + id + "] Thinking...");
+        Thread.sleep((long) (Math.random() * 600));
+    }
+
+    // ── Pick up forks (lower-numbered first to avoid deadlock) ────
+    private void pickUpForks() throws InterruptedException {
+        int first  = Math.min(leftForkId, rightForkId);  // always grab lower ID first
+        int second = Math.max(leftForkId, rightForkId);
+
+        System.out.println("[Philosopher " + id + "] Waiting for forks " + first + " and " + second + "...");
+        forks[first].lockInterruptibly();    // blocks here if the fork is in use
+        forks[second].lockInterruptibly();   // blocks here if the fork is in use
+        System.out.println("[Philosopher " + id + "] Picked up fork " + first + " and " + second);
+    }
+
+    // ── Eat phase ─────────────────────────────────────────────────
+    private void eat() throws InterruptedException {
+        System.out.println("[Philosopher " + id + "] Eating...");
+        Thread.sleep((long) (Math.random() * 600));
+    }
+
+    // ── Put down forks (release locks) ────────────────────────────
+    private void putDownForks() {
+        int first  = Math.min(leftForkId, rightForkId);
+        int second = Math.max(leftForkId, rightForkId);
+        forks[second].unlock();
+        forks[first].unlock();
+        System.out.println("[Philosopher " + id + "] Released forks " + first + " and " + second);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// main — entry point for ALL three parts
 // ─────────────────────────────────────────────────────────────────
 public class main {
 
@@ -198,5 +274,34 @@ public class main {
         for (Consumer c : consumers) c.join();
 
         System.out.println("\n=== All threads finished. Producer-Consumer complete. ===");
+
+        // ══════════════════════════════════════════════════════
+        //  PART 3 — Dining Philosophers (Thread Activity Logging)
+        // ══════════════════════════════════════════════════════
+        System.out.println("\n╔══════════════════════════════════════════════════════╗");
+        System.out.println("║  PART 3  Dining Philosophers (Thread Activity Log)   ║");
+        System.out.println("╚══════════════════════════════════════════════════════╝\n");
+        System.out.println("5 philosophers, 5 forks, 3 rounds each.");
+        System.out.println("Deadlock avoided by always acquiring lower-numbered fork first.\n");
+
+        final int NUM_PHILOSOPHERS = 5;
+
+        // Create 5 forks — each is a ReentrantLock shared by two philosophers
+        ReentrantLock[] forks = new ReentrantLock[NUM_PHILOSOPHERS];
+        for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
+            forks[i] = new ReentrantLock();
+        }
+
+        // Create and start all philosopher threads
+        Philosopher[] philosophers = new Philosopher[NUM_PHILOSOPHERS];
+        for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
+            philosophers[i] = new Philosopher(i, forks);
+        }
+        for (Philosopher p : philosophers) p.start();
+
+        // Wait for all philosophers to finish
+        for (Philosopher p : philosophers) p.join();
+
+        System.out.println("\n=== All philosophers have finished dining. ===");
     }
 }
