@@ -120,6 +120,5 @@ Five philosopher threads sit at a round table with five forks (locks) between th
 | Thread creation from `processes.txt` | Done - Part 1 |
 | Correct synchronization implementation | Done - Part 2 (mutex + semaphores) |
 | Output clarity — logs show execution order | Done - All 3 parts |
-| Report with explanation | Done - `REPORT.md` |
 | Source code with comments | Done - `main.java` |
 | Input file (`processes.txt`) | Done - Included |
